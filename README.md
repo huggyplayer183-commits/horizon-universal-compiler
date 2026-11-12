@@ -1,5 +1,5 @@
 # Horizon Universal Compiler (HUC)
-
+version human
 A universal compiler project designed to analyze,
 convert and build Minecraft projects for Horizon.
 
