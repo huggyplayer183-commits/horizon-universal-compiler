@@ -6,6 +6,7 @@ from huc.adapters.horizon import analyze_horizon_project
 from huc.adapters.resourcepack import analyze_resource_pack
 from huc.adapters.models import analyze_model
 from huc.adapters.archive import analyze_archive
+from huc.adapters.bedrock import analyze_bedrock_pack
 
 
 def main():
@@ -43,6 +44,9 @@ def main():
         "gltf_binary_model"
     ):
         result = analyze_model(args.input)
+
+    elif input_format in ("bedrock_pack", "bedrock_addon"):
+        result = analyze_bedrock_pack(args.input)
 
     print(json.dumps(result, indent=4, ensure_ascii=False))
 
