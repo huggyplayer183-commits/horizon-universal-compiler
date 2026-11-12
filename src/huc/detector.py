@@ -25,6 +25,20 @@ def detect_format(path: str) -> dict:
         }
 
     if file_path.is_dir():
+        if (file_path / "pack.mcmeta").is_file():
+            return {
+                "success": True,
+                "format": "resource_pack",
+                "message": "Minecraft resource pack detected.",
+            }
+
+        if (file_path / "horizon-native.json").is_file():
+            return {
+                "success": True,
+                "format": "horizon_project",
+                "message": "Horizon native project detected.",
+            }
+
         return {
             "success": True,
             "format": "project_folder",
@@ -32,6 +46,14 @@ def detect_format(path: str) -> dict:
         }
 
     extension = file_path.suffix.lower()
+
+    if extension == ".zip":
+        return {
+            "success": True,
+            "format": "archive",
+            "message": "ZIP archive detected. Content analysis required.",
+        }
+
     detected = SUPPORTED_FORMATS.get(extension)
 
     if detected is None:
@@ -45,4 +67,5 @@ def detect_format(path: str) -> dict:
         "success": True,
         "format": detected,
         "message": f"Detected format: {detected}",
-  }
+    }
+    
