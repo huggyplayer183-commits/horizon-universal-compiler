@@ -8,24 +8,25 @@ from huc.adapters.java_bytecode import analyze_class_file
 
 class JavaClassStructureTests(unittest.TestCase):
 
+    def utf8(self, text):
+        encoded = text.encode("utf-8")
+        return struct.pack(">H", len(encoded)) + encoded
+
     def create_class_file(self, path):
         constants = [
-            (1, b"TestClass"),
+            (1, self.utf8("TestClass")),
             (7, struct.pack(">H", 1)),
-            (1, b"java/lang/Object"),
+            (1, self.utf8("java/lang/Object")),
             (7, struct.pack(">H", 3)),
-            (1, b"java/io/Serializable"),
+            (1, self.utf8("java/io/Serializable")),
             (7, struct.pack(">H", 5)),
-            (1, b"health"),
-            (1, b"I"),
-            (1, b"run"),
-            (1, b"()V"),
+            (1, self.utf8("health")),
+            (1, self.utf8("I")),
+            (1, self.utf8("run")),
+            (1, self.utf8("()V")),
         ]
 
-        data = bytearray(
-            struct.pack(">IHHH", 0xCAFEBABE, 0, 61, 11)
-        )
-
+        data = bytearray(struct.pack(">IHHH", 0xCAFEBABE, 0, 61, 11))
         for tag, payload in constants:
             data.append(tag)
             data.extend(payload)
@@ -69,4 +70,4 @@ class JavaClassStructureTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-          
+    
