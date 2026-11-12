@@ -1,5 +1,5 @@
 import zipfile
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 
 
 def analyze_archive(archive_path: str) -> dict:
@@ -19,7 +19,10 @@ def analyze_archive(archive_path: str) -> dict:
 
     try:
         with zipfile.ZipFile(path, "r") as archive:
-            files = archive.namelist()
+            files = [
+                name for name in archive.namelist()
+                if not name.endswith("/")
+            ]
 
             if len(files) > 100000:
                 return {
@@ -27,26 +30,29 @@ def analyze_archive(archive_path: str) -> dict:
                     "message": "Archive contains too many entries."
                 }
 
-            file_set = set(files)
+            file_names = {
+                PurePosixPath(name.replace("\\", "/")).name
+                for name in files
+            }
 
             detected_types = []
 
-            if "pack.mcmeta" in file_set:
+            if "pack.mcmeta" in file_names:
                 detected_types.append("resource_pack")
 
-            if "modrinth.index.json" in file_set:
+            if "modrinth.index.json" in file_names:
                 detected_types.append("modrinth_modpack")
 
-            if "fabric.mod.json" in file_set:
+            if "fabric.mod.json" in file_names:
                 detected_types.append("fabric_mod")
 
-            if "META-INF/mods.toml" in file_set:
+            if "mods.toml" in file_names:
                 detected_types.append("forge_mod")
 
-            if "META-INF/neoforge.mods.toml" in file_set:
+            if "neoforge.mods.toml" in file_names:
                 detected_types.append("neoforge_mod")
 
-            if "manifest.json" in file_set:
+            if "manifest.json" in file_names:
                 detected_types.append("bedrock_pack_or_addon")
 
             return {
@@ -61,5 +67,5 @@ def analyze_archive(archive_path: str) -> dict:
         return {
             "success": False,
             "message": f"Could not analyze archive: {error}"
-              }
-      
+        }
+        
