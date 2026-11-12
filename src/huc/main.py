@@ -4,6 +4,7 @@ import json
 from huc.detector import detect_format
 from huc.adapters.horizon import analyze_horizon_project
 from huc.adapters.resourcepack import analyze_resource_pack
+from huc.adapters.models import analyze_model
 
 
 def main():
@@ -34,6 +35,13 @@ def main():
 
     elif input_format == "archive":
         result = analyze_resource_pack(args.input)
+
+    elif input_format in (
+        "blockbench_model",
+        "gltf_model",
+        "gltf_binary_model"
+    ):
+        result = analyze_model(args.input)
 
     print(json.dumps(result, indent=4, ensure_ascii=False))
 
