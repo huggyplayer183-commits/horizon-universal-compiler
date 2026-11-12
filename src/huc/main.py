@@ -7,6 +7,7 @@ from huc.adapters.resourcepack import analyze_resource_pack
 from huc.adapters.models import analyze_model
 from huc.adapters.archive import analyze_archive
 from huc.adapters.bedrock import analyze_bedrock_pack
+from huc.adapters.java_mod import analyze_java_mod
 
 
 def main():
@@ -47,6 +48,9 @@ def main():
 
     elif input_format in ("bedrock_pack", "bedrock_addon"):
         result = analyze_bedrock_pack(args.input)
+
+    elif input_format == "java_mod":
+        result = analyze_java_mod(args.input)
 
     print(json.dumps(result, indent=4, ensure_ascii=False))
 
