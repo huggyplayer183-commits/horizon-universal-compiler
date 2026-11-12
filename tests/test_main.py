@@ -25,11 +25,7 @@ class MainTests(unittest.TestCase):
 
             output = io.StringIO()
 
-            with patch.object(
-                sys,
-                "argv",
-                ["huc", str(model)]
-            ):
+            with patch.object(sys, "argv", ["huc", str(model)]):
                 with patch(
                     "huc.main.analyze_model",
                     return_value=expected
@@ -38,13 +34,33 @@ class MainTests(unittest.TestCase):
                         main()
 
             analyzer.assert_called_once_with(str(model))
+            self.assertIn('"format": "gltf"', output.getvalue())
 
-            self.assertIn(
-                '"format": "gltf"',
-                output.getvalue()
-            )
+    def test_archive_dispatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            archive = Path(temp) / "test.zip"
+            archive.write_bytes(b"test")
+
+            expected = {
+                "success": True,
+                "format": "archive",
+                "detected_types": []
+            }
+
+            output = io.StringIO()
+
+            with patch.object(sys, "argv", ["huc", str(archive)]):
+                with patch(
+                    "huc.main.analyze_archive",
+                    return_value=expected
+                ) as analyzer:
+                    with contextlib.redirect_stdout(output):
+                        main()
+
+            analyzer.assert_called_once_with(str(archive))
+            self.assertIn('"format": "archive"', output.getvalue())
 
 
 if __name__ == "__main__":
     unittest.main()
-  
+    
