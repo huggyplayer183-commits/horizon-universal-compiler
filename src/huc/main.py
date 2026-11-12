@@ -5,6 +5,7 @@ from huc.detector import detect_format
 from huc.adapters.horizon import analyze_horizon_project
 from huc.adapters.resourcepack import analyze_resource_pack
 from huc.adapters.models import analyze_model
+from huc.adapters.archive import analyze_archive
 
 
 def main():
@@ -34,7 +35,7 @@ def main():
         result = analyze_resource_pack(args.input)
 
     elif input_format == "archive":
-        result = analyze_resource_pack(args.input)
+        result = analyze_archive(args.input)
 
     elif input_format in (
         "blockbench_model",
