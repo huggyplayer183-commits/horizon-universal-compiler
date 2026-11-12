@@ -1,8 +1,9 @@
-
 import json
 import zipfile
 
 from pathlib import Path
+
+from huc.adapters.java_bytecode import analyze_class_file
 
 
 def analyze_java_mod(mod_path: str) -> dict:
@@ -34,16 +35,8 @@ def analyze_java_mod(mod_path: str) -> dict:
                 }
 
             file_set = set(files)
-
-            class_files = [
-                name for name in files
-                if name.endswith(".class")
-            ]
-
-            java_sources = [
-                name for name in files
-                if name.endswith(".java")
-            ]
+            class_files = [name for name in files if name.endswith(".class")]
+            java_sources = [name for name in files if name.endswith(".java")]
 
             metadata = {
                 "fabric": "fabric.mod.json" in file_set,
@@ -53,7 +46,6 @@ def analyze_java_mod(mod_path: str) -> dict:
             }
 
             fabric_info = None
-
             if metadata["fabric"]:
                 try:
                     fabric_info = json.loads(
@@ -66,9 +58,34 @@ def analyze_java_mod(mod_path: str) -> dict:
                     }
 
             detected_loaders = [
-                loader for loader, found in metadata.items()
-                if found
+                loader for loader, found in metadata.items() if found
             ]
+
+            analyzed_classes = []
+            failed_classes = []
+
+            for class_name in class_files[:100]:
+                try:
+                    class_data = archive.read(class_name)
+
+                    import tempfile
+                    with tempfile.NamedTemporaryFile(suffix=".class") as temporary_file:
+                        temporary_file.write(class_data)
+                        temporary_file.flush()
+                        class_result = analyze_class_file(temporary_file.name)
+
+                    if class_result["success"]:
+                        analyzed_classes.append({
+                            "file": class_name,
+                            "class_name": class_result["class_structure"]["class_name"],
+                            "java_version": class_result["java_version"],
+                            "methods": len(class_result["class_structure"]["methods"]),
+                            "fields": len(class_result["class_structure"]["fields"])
+                        })
+                    else:
+                        failed_classes.append(class_name)
+                except (OSError, KeyError, ValueError):
+                    failed_classes.append(class_name)
 
             return {
                 "success": True,
@@ -76,6 +93,11 @@ def analyze_java_mod(mod_path: str) -> dict:
                 "detected_loaders": detected_loaders,
                 "class_count": len(class_files),
                 "source_count": len(java_sources),
+                "analyzed_class_count": len(analyzed_classes),
+                "failed_class_count": len(failed_classes),
+                "analyzed_classes": analyzed_classes,
+                "failed_classes": failed_classes,
+                "class_analysis_limit": 100,
                 "has_fabric_metadata": metadata["fabric"],
                 "has_forge_metadata": metadata["forge"],
                 "has_neoforge_metadata": metadata["neoforge"],
@@ -90,4 +112,4 @@ def analyze_java_mod(mod_path: str) -> dict:
             "success": False,
             "message": f"Could not analyze Java mod: {error}"
         }
-      
+        
