@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from detector import detect_format
+from huc.detector import detect_format
 
 
 def main():
@@ -15,7 +15,6 @@ def main():
     )
 
     args = parser.parse_args()
-
     result = detect_format(args.input)
 
     print(json.dumps(result, indent=4))
