@@ -29,7 +29,7 @@ class JavaModBytecodeTests(unittest.TestCase):
 
         data.extend(struct.pack(">HHH", 0x0021, 2, 4))
         data.extend(struct.pack(">HH", 0, 0))
-        data.extend(struct.pack(">HH", 0, 0))
+        data.extend(struct.pack(">H", 0))
         data.extend(struct.pack(">H", 0))
 
         return bytes(data)
@@ -80,4 +80,4 @@ class JavaModBytecodeTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-  
+    
