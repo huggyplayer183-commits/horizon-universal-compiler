@@ -1,3 +1,4 @@
+import io
 import json
 import tempfile
 import unittest
@@ -9,26 +10,27 @@ from huc.adapters.bedrock import analyze_bedrock_pack
 
 class BedrockAdapterTests(unittest.TestCase):
 
+    def create_manifest(self):
+        return {
+            "header": {
+                "name": "HUC Test",
+                "description": "Test Pack",
+                "uuid": "12345678-test",
+                "version": [1, 0, 0]
+            },
+            "modules": [
+                {"type": "resources"}
+            ]
+        }
+
     def test_valid_bedrock_pack(self):
         with tempfile.TemporaryDirectory() as temp:
             path = Path(temp) / "bedrock.mcpack"
 
-            manifest = {
-                "header": {
-                    "name": "HUC Test",
-                    "description": "Test Pack",
-                    "uuid": "12345678-test",
-                    "version": [1, 0, 0]
-                },
-                "modules": [
-                    {"type": "resources"}
-                ]
-            }
-
             with zipfile.ZipFile(path, "w") as archive:
                 archive.writestr(
                     "manifest.json",
-                    json.dumps(manifest)
+                    json.dumps(self.create_manifest())
                 )
 
             result = analyze_bedrock_pack(str(path))
@@ -37,12 +39,37 @@ class BedrockAdapterTests(unittest.TestCase):
             self.assertEqual(result["name"], "HUC Test")
             self.assertEqual(result["module_count"], 1)
 
-    def test_missing_manifest(self):
+    def test_valid_mcaddon(self):
         with tempfile.TemporaryDirectory() as temp:
-            path = Path(temp) / "empty.mcpack"
+            path = Path(temp) / "bedrock.mcaddon"
 
-            with zipfile.ZipFile(path, "w"):
-                pass
+            nested_buffer = io.BytesIO()
+
+            with zipfile.ZipFile(nested_buffer, "w") as nested:
+                nested.writestr(
+                    "manifest.json",
+                    json.dumps(self.create_manifest())
+                )
+
+            with zipfile.ZipFile(path, "w") as addon:
+                addon.writestr(
+                    "resource_pack.mcpack",
+                    nested_buffer.getvalue()
+                )
+
+            result = analyze_bedrock_pack(str(path))
+
+            self.assertTrue(result["success"])
+            self.assertEqual(result["format"], "bedrock_addon")
+            self.assertEqual(result["pack_count"], 1)
+            self.assertEqual(result["packs"][0]["name"], "HUC Test")
+
+    def test_mcaddon_without_packs(self):
+        with tempfile.TemporaryDirectory() as temp:
+            path = Path(temp) / "empty.mcaddon"
+
+            with zipfile.ZipFile(path, "w") as archive:
+                archive.writestr("example.txt", "HUC")
 
             result = analyze_bedrock_pack(str(path))
 
@@ -56,4 +83,4 @@ class BedrockAdapterTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
-  
+    
