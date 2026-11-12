@@ -12,6 +12,15 @@ from huc.main import main
 
 class MainTests(unittest.TestCase):
 
+    def run_main(self, path):
+        output = io.StringIO()
+
+        with patch.object(sys, "argv", ["huc", str(path)]):
+            with contextlib.redirect_stdout(output):
+                main()
+
+        return output.getvalue()
+
     def test_model_dispatch(self):
         with tempfile.TemporaryDirectory() as temp:
             model = Path(temp) / "test.gltf"
@@ -23,18 +32,14 @@ class MainTests(unittest.TestCase):
                 "meshes": 1
             }
 
-            output = io.StringIO()
-
-            with patch.object(sys, "argv", ["huc", str(model)]):
-                with patch(
-                    "huc.main.analyze_model",
-                    return_value=expected
-                ) as analyzer:
-                    with contextlib.redirect_stdout(output):
-                        main()
+            with patch(
+                "huc.main.analyze_model",
+                return_value=expected
+            ) as analyzer:
+                output = self.run_main(model)
 
             analyzer.assert_called_once_with(str(model))
-            self.assertIn('"format": "gltf"', output.getvalue())
+            self.assertIn('"format": "gltf"', output)
 
     def test_archive_dispatch(self):
         with tempfile.TemporaryDirectory() as temp:
@@ -47,18 +52,34 @@ class MainTests(unittest.TestCase):
                 "detected_types": []
             }
 
-            output = io.StringIO()
-
-            with patch.object(sys, "argv", ["huc", str(archive)]):
-                with patch(
-                    "huc.main.analyze_archive",
-                    return_value=expected
-                ) as analyzer:
-                    with contextlib.redirect_stdout(output):
-                        main()
+            with patch(
+                "huc.main.analyze_archive",
+                return_value=expected
+            ) as analyzer:
+                output = self.run_main(archive)
 
             analyzer.assert_called_once_with(str(archive))
-            self.assertIn('"format": "archive"', output.getvalue())
+            self.assertIn('"format": "archive"', output)
+
+    def test_bedrock_dispatch(self):
+        with tempfile.TemporaryDirectory() as temp:
+            pack = Path(temp) / "test.mcpack"
+            pack.write_bytes(b"test")
+
+            expected = {
+                "success": True,
+                "format": "bedrock_pack",
+                "name": "HUC Test"
+            }
+
+            with patch(
+                "huc.main.analyze_bedrock_pack",
+                return_value=expected
+            ) as analyzer:
+                output = self.run_main(pack)
+
+            analyzer.assert_called_once_with(str(pack))
+            self.assertIn('"format": "bedrock_pack"', output)
 
 
 if __name__ == "__main__":
